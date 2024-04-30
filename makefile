@@ -1,5 +1,5 @@
 c: b
-	$(CXX) main.c -O3 -o ./build/c
+	$(CXX) main.c -O3 -O4 -o ./build/c
 	./build/c
 
 rust: b
