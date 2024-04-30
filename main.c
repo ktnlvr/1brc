@@ -5,15 +5,16 @@
 #include <string.h>
 
 #define STRBUF_SIZE 32
+#define SAMPLES ((long double)1000)
 
 int main(void) {
-  FILE *file = fopen("measurements.txt", "r");
+  FILE *file = fopen("measurements-1-000-000.txt", "r");
   if (file == NULL)
     return -1;
 
   char string_buf[STRBUF_SIZE];
   int min = INT_MAX, max = INT_MIN;
-  double aa;
+  long double aa;
   size_t idx = 0;
 
   do {
@@ -42,10 +43,13 @@ int main(void) {
       if (x < min)
         min = x;
 
-      idx = 0;
+      aa -= aa / SAMPLES;
+      aa += (long double)x / SAMPLES;
+
       memset(string_buf, sizeof(char), STRBUF_SIZE);
+      idx = 0;
     }
   } while (!feof(file));
 
-  printf("%d %d\n", min, max);
+  printf("%f %f %Lf\n", min / 10., max / 10., aa / 10.);
 }
