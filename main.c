@@ -34,12 +34,40 @@ typedef struct {
 
 void *thread(void *d) {
   thread_data *data = (thread_data *)d;
-  printf("%d\n", data->in.len);
+  size_t len = data->in.len;
+  const char* buf = data->in.str;
+  
+  int min = INT_MAX, max = INT_MIN;
+  size_t idx = 0;
+  while (idx < len) {
+    if (buf[idx++] == ';') {
+      int neg = 1;
+      if (buf[idx] == '-')
+        neg = -1, idx++;
+      size_t l = 0;
+      while (buf[idx++] != '.')
+        l++;
+
+      int x = buf[idx] - '0';
+      for (size_t i = 0; i < l; i++)
+        x += pow10[l - i] * (buf[idx - l - 1 + i] - '0');
+      x *= neg;
+
+      if (x < min)
+        min = x;
+      if (x > max)
+        max = x;
+    }
+  }
+
+  data->out.min = min;
+  data->out.max = max;
+
   return &data->out;
 }
 
 int main(void) {
-  int fd = open("measurements-1-000-000.txt", O_RDONLY | O_NONBLOCK);
+  int fd = open("measurements.txt", O_RDONLY | O_NONBLOCK);
   struct stat sb;
   if (fstat(fd, &sb))
     return -1;
@@ -72,37 +100,18 @@ int main(void) {
 
   thread_data *data = (thread_data *)calloc(sizeof(thread_data), threads_n);
   for (size_t i = 0; i < threads_n; i++) {
-    data[i].in.str = memory;
+    data[i].in.str = memory + bounds[i].begin;
     data[i].in.len = bounds[i].end - bounds[i].begin;
     pthread_create(&pool[i], NULL, thread, &data[i]);
   }
 
-  for (size_t i = 0; i < threads_n; i++)
-    pthread_join(pool[i], NULL);
-
-  return 0;
-
   int min = INT_MAX, max = INT_MIN;
-  size_t idx = 0;
-  while (idx < sb.st_size) {
-    if (memory[idx++] == ';') {
-      int neg = 1;
-      if (memory[idx] == '-')
-        neg = -1, idx++;
-      size_t l = 0;
-      while (memory[idx++] != '.')
-        l++;
-
-      int x = memory[idx] - '0';
-      for (size_t i = 0; i < l; i++)
-        x += pow10[l - i] * (memory[idx - l - 1 + i] - '0');
-      x *= neg;
-
-      if (x < min)
-        min = x;
-      if (x > max)
-        max = x;
-    }
+  for (size_t i = 0; i < threads_n; i++) {
+    pthread_join(pool[i], NULL);
+    if (data[i].out.max > max)
+      max = data[i].out.max;
+    if (data[i].out.min < min)
+      min = data[i].out.min;
   }
 
   printf("%d %d\n", min, max);
