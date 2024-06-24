@@ -1,9 +1,10 @@
-use std::{collections::HashMap, fs::File};
+use fxhash::FxHashMap;
+use std::fs::File;
 
 use memmap::MmapOptions;
 
 fn main() -> std::io::Result<()> {
-    let mut hashmap = HashMap::<String, (i32, i32, i32, u32)>::new();
+    let mut hashmap = FxHashMap::<String, (i32, i32, i32, u32)>::default();
 
     let file = File::open("measurements.txt").unwrap();
     let mmap = unsafe { MmapOptions::new().map(&file).unwrap() };
@@ -14,7 +15,7 @@ fn main() -> std::io::Result<()> {
     while i < len {
         let j = i;
 
-        while mmap[i as usize] != b';' {
+        while mmap[i] != b';' {
             i += 1;
         }
 
@@ -26,7 +27,7 @@ fn main() -> std::io::Result<()> {
         i += 1;
 
         let mut j = i;
-        while mmap[i as usize] != b'\n' {
+        while mmap[i] != b'\n' {
             i += 1;
         }
 
