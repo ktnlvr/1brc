@@ -9,7 +9,9 @@ fn main() -> std::io::Result<()> {
     let mmap = unsafe { MmapOptions::new().map(&file).unwrap() };
 
     let mut i: usize = 0;
-    while i < file.metadata().unwrap().len() as usize {
+    let len = file.metadata().unwrap().len() as usize;
+
+    while i < len {
         let j = i;
 
         while mmap[i as usize] != b';' {
@@ -34,14 +36,16 @@ fn main() -> std::io::Result<()> {
             signum = -1;
         }
 
-        let major: i32 = mmap[j..i - 2]
-            .iter()
-            .rev()
-            .map(|c| *c - b'0')
-            .enumerate()
-            .fold(0, |acc, (n, m)| acc + m as i32 * 10i32.pow(n as u32));
+        let mut major = 0;
+        let iters = i - 2 - j;
+        for k in 0..iters {
+            const POWERS_OF_TEN: [i32; 4] = [1, 10, 100, 1000];
+            let d = mmap[j + k] - b'0';
+            major += d as i32 * POWERS_OF_TEN[iters - k];
+        }
+
         let minor = (mmap[i - 1] - b'0') as i32;
-        let n = signum * (major * 10 + minor);
+        let n = signum * (major + minor);
 
         let (mi, ma, sum, count) = hashmap.get_mut(string).unwrap();
         *mi = (*mi).min(n);
@@ -53,7 +57,10 @@ fn main() -> std::io::Result<()> {
     }
 
     for (name, (mi, ma, sum, n)) in hashmap {
-        println!("{name};{mi:.2};{ma:.2};{:.2}", sum as f64 / (10. * n as f64));
+        println!(
+            "{name};{mi:.2};{ma:.2};{:.1}",
+            sum as f64 / (10. * n as f64)
+        );
     }
 
     Ok(())
