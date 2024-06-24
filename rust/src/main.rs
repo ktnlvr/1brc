@@ -59,7 +59,11 @@ fn main() -> std::io::Result<()> {
 
     for (name, (mi, ma, sum, n)) in hashmap {
         println!(
-            "{name};{mi:.2};{ma:.2};{:.1}",
+            "{name}: {}.{}/{}.{}/{:.1}",
+            mi / 10,
+            (mi % 10).abs(),
+            ma / 10,
+            (ma % 10).abs(),
             sum as f64 / (10. * n as f64)
         );
     }
