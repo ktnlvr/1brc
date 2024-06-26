@@ -1,5 +1,5 @@
 c: b
-	$(CXX) main.c -O3 -O4 -o ./build/c
+	$(CXX) c/main.c -O3 -O4 -o ./build/c -march=native -flto
 	./build/c
 
 rs: b
