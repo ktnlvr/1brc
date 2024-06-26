@@ -14,7 +14,7 @@ unsigned long polynomial_hash(const char *str, size_t len, size_t size) {
 
   long pow = 1;
   for (size_t i = 0; i < len; i++) {
-    p = (p + str[i] * pow) % 100000000007;
+    p = (p + str[i] * pow) % 1000000009;
     pow *= 137;
   }
 
@@ -72,7 +72,9 @@ bucket *hashmap_get(hashmap *map, const char *str, size_t len) {
 
     // If no bucket exists, insert after the first one
     if (!b) {
-      // printf("HASH COLLISION for %.*s\n", len, str);
+#ifdef REPORT_HASH_COLLISIONS
+      fprintf(stderr, "HASH COLLISION for %.*s\n", len, str);
+#endif
       bucket *new_b = (bucket *)malloc(sizeof(bucket));
       *new_b = bucket_new();
       new_b->str = strndup(str, len);
