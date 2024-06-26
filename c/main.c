@@ -7,18 +7,19 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#define HASHTABLE_STARTING_SIZE 512
+#define HASHTABLE_SIZE 512
+#define MOD 1000000009
 
-unsigned long polynomial_hash(const char *str, size_t len, size_t size) {
+unsigned long polynomial_hash(const char *str, size_t len) {
   unsigned long p = 0;
 
-  long pow = 1;
+  unsigned long pow = 1;
   for (size_t i = 0; i < len; i++) {
-    p = (p + str[i] * pow) % 1000000009;
-    pow *= 137;
+    p = (p + (str[i] - ' ' + 1) * pow) % MOD;
+    pow = (pow * 53) % MOD;
   }
 
-  return p % size;
+  return p % HASHTABLE_SIZE;
 }
 
 typedef struct bucket bucket;
@@ -48,7 +49,7 @@ typedef struct {
 
 hashmap hashmap_new() {
   hashmap map;
-  map.capacity = HASHTABLE_STARTING_SIZE;
+  map.capacity = HASHTABLE_SIZE;
   map.buckets = (bucket *)malloc(map.capacity * sizeof(bucket));
 
   for (size_t i = 0; i < map.capacity; i++)
@@ -60,7 +61,7 @@ hashmap hashmap_new() {
 size_t min(size_t a, size_t b) { return (a > b) * b + (b >= a) * a; }
 
 bucket *hashmap_get(hashmap *map, const char *str, size_t len) {
-  unsigned long hash = polynomial_hash(str, len, map->capacity);
+  unsigned long hash = polynomial_hash(str, len);
 
   bucket *b = &map->buckets[hash];
   if (map->buckets[hash].str == 0) {
@@ -72,9 +73,7 @@ bucket *hashmap_get(hashmap *map, const char *str, size_t len) {
 
     // If no bucket exists, insert after the first one
     if (!b) {
-#ifdef REPORT_HASH_COLLISIONS
       fprintf(stderr, "HASH COLLISION for %.*s\n", len, str);
-#endif
       bucket *new_b = (bucket *)malloc(sizeof(bucket));
       *new_b = bucket_new();
       new_b->str = strndup(str, len);
