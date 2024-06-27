@@ -10,6 +10,9 @@
 #define HASHTABLE_SIZE 512
 #define MOD 1000000009
 
+#define MIN(a, b) (a > b ? b : a)
+#define MAX(a, b) (a > b ? a : b)
+
 unsigned long polynomial_hash(const char *str, size_t len) {
   unsigned long p = 0;
 
@@ -26,7 +29,7 @@ typedef struct bucket bucket;
 
 typedef struct bucket {
   char *str;
-  long min, max;
+  int min, max;
   unsigned long count, sum;
   struct bucket *next;
 } bucket;
@@ -34,8 +37,8 @@ typedef struct bucket {
 bucket bucket_new() {
   bucket b;
   b.str = 0;
-  b.max = LONG_MIN;
-  b.min = LONG_MAX;
+  b.max = INT_MIN;
+  b.min = INT_MAX;
   b.count = 0;
   b.sum = 0;
   b.next = 0;
@@ -58,8 +61,6 @@ hashmap hashmap_new() {
   return map;
 }
 
-size_t min(size_t a, size_t b) { return (a > b) * b + (b >= a) * a; }
-
 bucket *hashmap_get(hashmap *map, const char *str, size_t len) {
   unsigned long hash = polynomial_hash(str, len);
 
@@ -68,7 +69,7 @@ bucket *hashmap_get(hashmap *map, const char *str, size_t len) {
     map->buckets[hash].str = strndup(str, len);
   } else {
     for (; b != 0; b = b->next)
-      if (!strncmp(str, b->str, min(len, strlen(b->str))))
+      if (!strncmp(str, b->str, MIN(len, strlen(b->str))))
         break;
 
     // If no bucket exists, insert after the first one
@@ -90,6 +91,8 @@ bucket *hashmap_get(hashmap *map, const char *str, size_t len) {
   return b;
 }
 
+const int pow10[10] = {10, 100, 1000, 1000, 10000};
+
 int main(void) {
   int fd = open("measurements.txt", O_RDONLY | O_NONBLOCK);
   struct stat sb;
@@ -106,19 +109,45 @@ int main(void) {
     size_t j = i;
     while (memory[i] != ';')
       i++;
-
     bucket *bucket = hashmap_get(&map, memory + j, i - j);
+    i++;
+
     bucket->count++;
 
+    j = i;
     while (memory[i] != '\n')
       i++;
+
+    int s = 1;
+    if (memory[j] == '-') {
+      s = -1;
+      j++;
+    }
+
+    int n = memory[i - 1] - '0';
+    for (int k = j; k < i - 2; k++)
+      n += (memory[k] - '0') * pow10[i - k - 3];
+    n *= s;
+
+    bucket->max = MAX(bucket->max, n);
+    bucket->min = MIN(bucket->min, n);
+    bucket->sum += n;
   }
 
   for (size_t i = 0; i < map.capacity; i++) {
     if (map.buckets[i].str == 0)
       continue;
 
-    for (bucket *b = &map.buckets[i]; b != 0; b = b->next)
-      printf("%s %d\n", b->str, b->count);
+    for (bucket *b = &map.buckets[i]; b != 0; b = b->next) {
+      int max_major = b->max / 10;
+      int max_minor = abs(b->max % 10);
+
+      int min_major = b->min / 10;
+      int min_minor = abs(b->min % 10);
+
+      printf("%s    max: %d.%d min: %d.%d avg: %d\n", b->str, max_minor,
+             max_minor, min_major, min_minor,
+             b->count);
+    }
   }
 }
