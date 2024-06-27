@@ -145,9 +145,9 @@ int main(void) {
       int min_major = b->min / 10;
       int min_minor = abs(b->min % 10);
 
-      printf("%s    max: %d.%d min: %d.%d avg: %d\n", b->str, max_minor,
+      printf("%s    max: %d.%d min: %d.%d avg: %.1lf\n", b->str, max_major,
              max_minor, min_major, min_minor,
-             b->count);
+             (double)b->sum / (10. * b->count));
     }
   }
 }
