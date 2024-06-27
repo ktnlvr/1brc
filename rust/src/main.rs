@@ -57,7 +57,10 @@ fn main() -> std::io::Result<()> {
         i += 1;
     }
 
-    for (name, (mi, ma, sum, n)) in hashmap {
+    let mut vec = Vec::from_iter(hashmap.into_iter());
+    vec.sort_by(|(s1, _), (s2, _)| s1.cmp(s2));
+
+    for (name, (mi, ma, sum, n)) in vec {
         println!(
             "{name}: {}.{}/{}.{}/{:.1}",
             mi / 10,
