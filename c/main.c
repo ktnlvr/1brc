@@ -125,7 +125,7 @@ int main(void) {
     }
 
     int n = memory[i - 1] - '0';
-    for (int k = j; k < i - 2; k++)
+    for (size_t k = j; k < i - 2; k++)
       n += (memory[k] - '0') * pow10[i - k - 3];
     n *= s;
 
